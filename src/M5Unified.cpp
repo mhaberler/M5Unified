@@ -287,6 +287,8 @@ board_t M5Unified::_check_boardtype(board_t board) {
 
 #if defined(PLATFORM_LILYGO_TS3)
     board              = board_t::board_LilygoTS3;
+#elif defined(PLATFORM_S3_TEST_N8R8)
+    board = board_t::board_S3DevkitM8R8;
 #elif defined(PLATFORM_S3DEVKIT_M1N8)
     board = board_t::board_S3DevkitM1N8;
 #elif defined(PLATFORM_SUNTON_S3_TFTOUCH)
@@ -451,6 +453,14 @@ void M5Unified::_setup_i2c(board_t board) {
             ex_sda = I2C1_SDA;
             ex_scl = I2C1_SCL;
             break;
+
+        case board_t::board_S3DevkitM8R8:
+            in_sda = I2C0_SDA;
+            in_scl = I2C0_SCL;
+            ex_sda = I2C1_SDA;
+            ex_scl = I2C1_SCL;
+            break;
+
         case board_t::board_LilygoTS3:
             break;
         case board_t::board_Sunton_S3TFTouch:
