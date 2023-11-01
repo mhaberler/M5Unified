@@ -13,8 +13,10 @@
 #include "INA3221_Class.hpp"
 #include "RTC8563_Class.hpp"
 
-#if __has_include (<driver/adc.h>)
-#include <driver/adc.h>
+#if __has_include (<esp_adc/adc_oneshot.h>)
+  #include <esp_adc/adc_oneshot.h>
+  #include "esp_adc/adc_cali.h"
+  #include "esp_adc/adc_cali_scheme.h"
 #endif
 
 namespace m5
@@ -178,7 +180,7 @@ namespace m5
     std::uint8_t _rtcIntPin = 255;
     pmic_t _pmic = pmic_t::pmic_unknown;
 #if !defined (M5UNIFIED_PC_BUILD)
-    adc1_channel_t _batAdc;
+    adc_channel_t _batAdc;
 #endif
   };
 }

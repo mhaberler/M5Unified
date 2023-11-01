@@ -11,7 +11,11 @@
 #include <esp_sleep.h>
 #include <sdkconfig.h>
 
-#include <esp_adc_cal.h>
+#if __has_include (<esp_adc/adc_cali.h>)
+  #include <esp_adc/adc_cali.h>
+#else
+  #include <esp_adc_cal.h>
+#endif
 #include <soc/adc_channel.h>
 
 #if __has_include (<esp_idf_version.h>)
@@ -79,7 +83,7 @@ namespace m5
 
     case board_t::board_M5Capsule:
       _pwrHoldPin = GPIO_NUM_46;
-      _batAdc = (adc1_channel_t) ADC1_GPIO6_CHANNEL;
+      _batAdc = (adc_channel_t) ADC1_GPIO6_CHANNEL;
       _pmic = pmic_t::pmic_adc;
       _adc_ratio = 2.0f;
       break;
@@ -88,7 +92,7 @@ namespace m5
       _pwrHoldPin = GPIO_NUM_46;
       NON_BREAK;
     case board_t::board_M5Cardputer:
-      _batAdc = (adc1_channel_t) ADC1_GPIO10_CHANNEL;
+      _batAdc = (adc_channel_t) ADC1_GPIO10_CHANNEL;
       _pmic = pmic_t::pmic_adc;
       _adc_ratio = 2.0f;
       break;
@@ -798,11 +802,11 @@ namespace m5
 
 #if !defined (M5UNIFIED_PC_BUILD)
 
-  static std::int32_t getBatteryAdcRaw(adc1_channel_t adc_ch)
+  static std::int32_t getBatteryAdcRaw(adc_channel_t adc_ch)
   {
 #if !defined (CONFIG_IDF_TARGET) || defined (CONFIG_IDF_TARGET_ESP32) || defined (CONFIG_IDF_TARGET_ESP32S3)
     static constexpr int BASE_VOLATAGE = 3600;
-
+#ifdef LEGACY_ADC
     static esp_adc_cal_characteristics_t* adc_chars = nullptr;
     if (adc_chars == nullptr)
     {
@@ -810,8 +814,32 @@ namespace m5
       adc1_config_channel_atten(adc_ch, ADC_ATTEN_DB_11);
       adc_chars = (esp_adc_cal_characteristics_t*)calloc(1, sizeof(esp_adc_cal_characteristics_t));
       esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, BASE_VOLATAGE, adc_chars);
+    } 
+    return esp_adc_cal_raw_to_voltage(adc1_get_raw(adc_ch), adc_chars);
+#else
+  // see https://github.com/espressif/esp-idf/blob/master/examples/peripherals/adc/oneshot_read/main/oneshot_read_main.c
+  #if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+    static adc_cali_handle_t cali_handle = nullptr;
+    if (cali_handle == nullptr)
+    { 
+      adc_oneshot_chan_cfg_t config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = EXAMPLE_ADC_ATTEN,
+      };
+
+      adc_cali_line_fitting_config_t cali_config = {
+        .unit_id = adc_ch,
+        .atten = ADC_ATTEN_DB_11,
+        .bitwidth = ADC_BITWIDTH_12,
+      };
+      esp_err_t ret = adc_cali_create_scheme_line_fitting(&cali_config, &cali_handle);
     }
     return esp_adc_cal_raw_to_voltage(adc1_get_raw(adc_ch), adc_chars);
+  #else
+    return 0;
+  #endif
+#endif
+
 #else
     return 0;
 #endif
