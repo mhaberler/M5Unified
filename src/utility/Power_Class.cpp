@@ -112,7 +112,9 @@ namespace m5
       m5gfx::gpio_hi(TimerCam_POWER_HOLD_PIN);
       m5gfx::pinMode(TimerCam_LED_PIN, m5gfx::pin_mode_t::output);
       m5gfx::gpio_lo(TimerCam_LED_PIN);  // system LED off
+      #ifdef LEGACY_ADC
       _batAdc = (adc1_channel_t) ADC1_GPIO38_CHANNEL;
+      #endif
       _pmic = pmic_t::pmic_adc;
       _adc_ratio = 1.513f;
       break;
@@ -121,7 +123,9 @@ namespace m5
       _pwrHoldPin = CoreInk_POWER_HOLD_PIN;
       _wakeupPin = GPIO_NUM_27; // power button;
       _rtcIntPin = GPIO_NUM_19;
+#ifdef LEGACY_ADC
       _batAdc = (adc1_channel_t) ADC1_GPIO35_CHANNEL;
+#endif
       _pmic = pmic_t::pmic_adc;
       _adc_ratio = 25.1f / 5.1f;
       break;
@@ -130,7 +134,9 @@ namespace m5
       _pwrHoldPin = M5Paper_POWER_HOLD_PIN;
       m5gfx::pinMode(M5Paper_EXT5V_ENABLE_PIN, m5gfx::pin_mode_t::output);
       _wakeupPin = GPIO_NUM_36; // touch panel INT;
+#ifdef LEGACY_ADC
       _batAdc = (adc1_channel_t) ADC1_GPIO35_CHANNEL;
+#endif
       _pmic = pmic_t::pmic_adc;
       _adc_ratio = 2.0f;
       break;
@@ -155,7 +161,9 @@ namespace m5
     case board_t::board_M5StickCPlus2:
       _pwrHoldPin = StickCPlus2_POWER_HOLD_PIN;
       m5gfx::pinMode(StickCPlus2_LED_PIN, m5gfx::pin_mode_t::output);
+#ifdef LEGACY_ADC
       _batAdc = (adc1_channel_t) ADC1_GPIO38_CHANNEL;
+#endif
       _pmic = pmic_t::pmic_adc;
       _adc_ratio = 2.0f;
       break;
@@ -818,7 +826,7 @@ namespace m5
     return esp_adc_cal_raw_to_voltage(adc1_get_raw(adc_ch), adc_chars);
 #else
   // see https://github.com/espressif/esp-idf/blob/master/examples/peripherals/adc/oneshot_read/main/oneshot_read_main.c
-  #if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+  #if LEGACY_ADC
     static adc_cali_handle_t cali_handle = nullptr;
     if (cali_handle == nullptr)
     { 
